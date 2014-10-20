@@ -1,0 +1,34 @@
+#pragma once
+
+#include <vector>
+#include "controller.h"
+using namespace std;
+
+#define K 5
+
+
+// Klasse, die einen Vektor mit allen Werte eines NearstVektors enthaelt + ?
+
+
+// Anzahl an Elementen je Vektor
+// index 0 - 4
+// Linevektor index
+// 0		NearestNeighbourCalcsum
+// 1		accel
+// 2		brake
+// 3		gear
+// 4		steer
+
+static const int ElementeJeVektor = 5;
+
+
+class NearestVector {
+	// public:
+	//	NearestVector();
+
+	public:
+		std::vector<float> nv;
+		/* http://de.wikibooks.org/wiki/C++-Programmierung:_Vector
+		vector<T> v(n, val); Deklariert v als vector, der bereits n Elemente vom Typ T mit dem Wert val enthält.
+		*/
+};
