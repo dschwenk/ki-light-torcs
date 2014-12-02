@@ -184,7 +184,7 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 		cout << cs->getSpeedX() << "\t" << cs->getSpeedY() << "\n";
 
 		// das Auto ist langsam bzw. steht neben der Strecke
-		if(cs->getSpeedX() <= 15){
+		if(cs->getSpeedX() <= 20){
 			this->KNearest_accel = 0.6;
 			this->KNearest_brake = 0;
 			this->KNearest_gear = 1;
@@ -351,10 +351,18 @@ void Controller::calcKNearestNeighbour(CarState* cs, CarControl* cc){
 		// TrackSensorDaten
 		// j+=2 -> "nur" 10 anstatt 19 werte beruecksichtigt
 		// j+=3 -> "nur" 7 anstatt 19 werte beruecksichtigt
+
 		for(int j=44;j<=62;j+=2){
 			NearestNeighbourDistanceSum += ((this->LogFileLineVektorList[i]->lv[j] - cs->getTrack(getTrackIndex)) * (this->LogFileLineVektorList[i]->lv[j] - cs->getTrack(getTrackIndex)));
 			getTrackIndex += 2;
 		}
+		/*
+		NearestNeighbourDistanceSum += ((this->LogFileLineVektorList[i]->lv[44] - cs->getTrack(0)) * (this->LogFileLineVektorList[i]->lv[44] - cs->getTrack(0)));
+		NearestNeighbourDistanceSum += ((this->LogFileLineVektorList[i]->lv[49] - cs->getTrack(5)) * (this->LogFileLineVektorList[i]->lv[49] - cs->getTrack(5)));
+		NearestNeighbourDistanceSum += ((this->LogFileLineVektorList[i]->lv[53] - cs->getTrack(9)) * (this->LogFileLineVektorList[i]->lv[53] - cs->getTrack(9)));
+		NearestNeighbourDistanceSum += ((this->LogFileLineVektorList[i]->lv[57] - cs->getTrack(13)) * (this->LogFileLineVektorList[i]->lv[57] - cs->getTrack(13)));
+		NearestNeighbourDistanceSum += ((this->LogFileLineVektorList[i]->lv[62] - cs->getTrack(18)) * (this->LogFileLineVektorList[i]->lv[62] - cs->getTrack(18)));
+		*/
 
 		// gehe Liste durch und pruefe ob die Summe kleiner ist als bei einem der K naechsten Vektoren
 		for(it=NearestVectorList.begin();it != NearestVectorList.end(); ++it){
@@ -405,12 +413,38 @@ void Controller::calcKNearestNeighbour(CarState* cs, CarControl* cc){
 	float accel = accelsum / K;
 	float brake = brakesum / K;
 	float steer = steersum / K;
-	int gear = (int)gearsum / K;
+	// int gear = (int)gearsum / (K-0.85);
+	// K-0.85, berechnet den Gang akkurater -> float 1.9 => int 1
+
+	// setting gear "manuel" is accurater than calculating / prevents gear from heavy overfitting
+	float speedX = cs->getSpeedX();
+	if(speedX > 240){
+		this->KNearest_gear = 6;
+	}
+	else if(speedX > 200 && speedX < 230){
+		this->KNearest_gear = 5;
+	}
+	else if (speedX > 140 && speedX < 190){
+		this->KNearest_gear = 4;
+	}
+	else if (speedX > 90 && speedX < 130){
+		this->KNearest_gear = 3;
+	}
+	else if (speedX > 40 && speedX < 80){
+		this->KNearest_gear = 2;
+	}
+	else if (speedX < 35){
+		this->KNearest_gear = 1;
+	}
+	else {
+		// do nothing, keep current gear
+	}
+
 
 	this->KNearest_accel = accel;
 	this->KNearest_brake = brake;
 	this->KNearest_steer = steer;
-	this->KNearest_gear = gear;
+	// this->KNearest_gear = gear;
 
 }
 
