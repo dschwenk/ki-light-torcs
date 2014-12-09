@@ -76,6 +76,9 @@ private:
 	// Berechnung der naechsten K Nachbarn
 	void calcKNearestNeighbour(CarState* cs, CarControl* cc);
 
+	// Bringe das Auto zurueck auf die Strecke
+	void bringCarBackToRoad(CarState* cs, CarControl* cc);
+
 };
 
 #endif

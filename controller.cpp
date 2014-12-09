@@ -230,57 +230,12 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 	 * Notfallprogramm - Strecke verlassen, alle Trackwerte == -1
 	 */
 	if((cs->getTrack(0) == -1) && (cs->getTrack(9) == -1) && (cs->getTrack(18) == -1)){
-
-		// Kontrollausgabe der aktuellen Trackwerte + Geschwindigkeit
-		cout << cs->getTrack(0) << "\t" << cs->getTrack(9) << "\t" << cs->getTrack(18) << "\n";
-		cout << cs->getSpeedX() << "\t" << cs->getSpeedY() << "\n";
-
-		// das Auto ist langsam bzw. steht neben der Strecke
-		if(cs->getSpeedX() <= 20){
-			this->KNearest_accel = 0.6;
-			this->KNearest_brake = 0;
-			this->KNearest_gear = 1;
-			// pruefe ob Auto links oder rechts von der Strecke steht
-			// Auto steht rechts neben der Strecke wenn der Streckenabstand links gross war
-			if((this->notfallGetTrack0) > (this->notfallGetTrack18)){
-				// lenke nach links
-				this->KNearest_steer = 0.4;
-			}
-			// Auto steht links neben der Strecke
-			else {
-				// lenke nach rechts
-				this->KNearest_steer = -0.4;
-			}
-		}
-		// das Auto ist mit hoher Geschwindigkeit neben der Strecke
-		else {
-			// bremsen um das Auto zum langsamer werden / anhalten zu bringen
-			this->KNearest_accel = 0;
-			this->KNearest_brake = 0.45;
-			this->KNearest_steer = 0;
-			float speedX = cs->getSpeedX();
-			if(speedX > 150){
-				this->KNearest_gear = 5;
-			}
-			else if (speedX > 120){
-				this->KNearest_gear = 4;
-			}
-			else if (speedX > 70){
-				this->KNearest_gear = 3;
-			}
-			else if (speedX > 30){
-				this->KNearest_gear = 2;
-			}
-			else {
-				this->KNearest_gear = 1;
-			}
-		}
+		// Auto ist neben der Strecke
+		bringCarBackToRoad(cs,cc);
 	}
 
-	/*
-	 * _KEIN_ Notfall - Auto faehrt
-	 */
 
+	// KEIN_ Notfall - Auto faehrt
 	else {
 
 		// fuer den Notfall speichern ob sich das das Auto links oder rechts auf die Streckenbegrenzung zubewegt
@@ -303,6 +258,57 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 	cc->setClutch(clutchControl(cs, cc));
 	cc->setGear(gearControl(cs, cc));
 }
+
+
+void Controller::bringCarBackToRoad(CarState* cs, CarControl* cc){
+
+	// Kontrollausgabe der aktuellen Trackwerte + Geschwindigkeit
+	cout << cs->getTrack(0) << "\t" << cs->getTrack(9) << "\t" << cs->getTrack(18) << "\n";
+	cout << cs->getSpeedX() << "\t" << cs->getSpeedY() << "\n";
+
+	// das Auto ist langsam bzw. steht neben der Strecke
+	if(cs->getSpeedX() <= 20){
+		// gebe leicht Gas
+		this->KNearest_accel = 0.6;
+		this->KNearest_brake = 0;
+		this->KNearest_gear = 1;
+		// pruefe ob Auto links oder rechts von der Strecke steht
+		// Auto steht rechts neben der Strecke wenn der Streckenabstand links gross war
+		if((this->notfallGetTrack0) > (this->notfallGetTrack18)){
+			// lenke nach links
+			this->KNearest_steer = 0.4;
+		}
+		// Auto steht links neben der Strecke
+		else {
+			// lenke nach rechts
+			this->KNearest_steer = -0.4;
+		}
+	}
+	// das Auto ist mit hoher Geschwindigkeit neben der Strecke
+	else {
+		// bremsen um das Auto zum langsamer werden / anhalten zu bringen
+		this->KNearest_accel = 0;
+		this->KNearest_brake = 0.45;
+		this->KNearest_steer = 0;
+		float speedX = cs->getSpeedX();
+		if(speedX > 150){
+			this->KNearest_gear = 5;
+		}
+		else if (speedX > 120){
+			this->KNearest_gear = 4;
+		}
+		else if (speedX > 70){
+			this->KNearest_gear = 3;
+		}
+		else if (speedX > 30){
+			this->KNearest_gear = 2;
+		}
+		else {
+			this->KNearest_gear = 1;
+		}
+	}
+}
+
 
 
 void Controller::calcKNearestNeighbour(CarState* cs, CarControl* cc){
