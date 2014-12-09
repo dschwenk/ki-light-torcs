@@ -8,6 +8,9 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <string>
+
+
 using namespace std;
 
 
@@ -17,13 +20,62 @@ Controller::Controller()
 	//TODO: evtl. KI Initialisieren
 	//TODO: Trainingsdaten von Datei laden
 
+	string trainingDataFile;
+	bool inputTrainingFileValid = false;
+	int inputTrainingFile = 0;
+	while(!inputTrainingFileValid){
+		do {
+			// clear zum zuruecksetzen nach Fehler, sync um Puffer zu leeren
+			cin.clear();
+			cin.sync();
+			cout << "\nWelche Trainingsdatendatei laden?\n";
+			cout << "[0] Default - alle Daten (trainingData.log)\n";
+			cout << "[1] Akkarampalle-mountain (AkkarampalleData.log)\n";
+			cout << "[2] Limalonges-desert (LimalongesData.log)\n";
+			cout << "[3] Ushite-mountain-snow (UshiteData.log)\n";
+			cout << "[9] Dateinnamen eingeben\n";
+		}
+		while(!(cin >> inputTrainingFile));
+		switch(inputTrainingFile){
+			case 0:
+				trainingDataFile = "trainingData.log";
+				inputTrainingFileValid = true;
+				break;
+			case 1:
+				trainingDataFile = "AkkarampalleData.log";
+				inputTrainingFileValid = true;
+				break;
+			case 2:
+				trainingDataFile = "LimalongesData.log";
+				inputTrainingFileValid = true;
+				break;
+			case 3:
+				trainingDataFile = "UshiteData.log";
+				inputTrainingFileValid = true;
+				break;
+			case 9:
+				// TODO keine Eingabe moeglich?
+				cout << "Dateinname: ";
+				cin.clear();
+				cin.sync();
+				getline(cin,trainingDataFile);
+				inputTrainingFileValid = true;
+				break;
+			default:
+				cout << "\nUngueltige Eingabe!\n";
+				break;
+		}
+	}
+
+	const char *cstrTrainingDataFile = trainingDataFile.c_str();
 
 	// LogDatei / Trainingsdatei oeffnen und zeilenweise auslesen
-	cout << "\n\nOeffne Trainingsdaten-Datei und importiere Vektoren";
-	ifstream trainingDataFile("trainingData.log",ios::in);
-	if(trainingDataFile.is_open()){
+	cout << "\nOeffne Trainingsdaten-Datei " << trainingDataFile << " und importiere Vektoren";
+
+	ifstream trainingDataFileStream(cstrTrainingDataFile,ios::in);
+	if(trainingDataFileStream.is_open()){
 		string line;
-		while(getline(trainingDataFile,line)){
+		while(getline(trainingDataFileStream,line)){
 			// string parsen und Werte in Vektor ablegen
 			stringstream ss(line);
 			LineVector* TmpLineVector;
@@ -43,7 +95,7 @@ Controller::Controller()
 		cout << "\nTrainingsdaten importiert\n\n";
 	}
 	else {
-		cout << "\nKonnte Traininsdaten-Datein nicht oeffnen!";
+		cout << "\nKonnte Traininsdaten-Datein nicht oeffnen!\n\n";
 	}
 }
 
