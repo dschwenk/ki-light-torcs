@@ -101,6 +101,9 @@ Controller::Controller()
 	// initialisiere Notfallprogramm CarIsDrivingInWrongDirection
 	this->distFromStartValue = 0;
 	this->isCarDrivingInWrongDirection = false;
+	// initialisiere Notfallprogramm Auto hat sich festgefahren
+	this->isCarStuck = false;
+	this->counterTimeDriveBackward = 50;
 }
 
 
@@ -229,44 +232,67 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 	// Aufruf der Funktionen in der Reihenfolge
 	// generateVector,accelcontrol,brakeControl,steerControl,clutchControl,gearControl
 
+
+	cout << "\ndist raced: " << cs->getDistRaced() << "\t| diff: " << cs->getDistRaced() - distRaced;
+
+
 	bool carPassedStartFinish = false;
-	// pruefe ob Auto eben ueber Start/Ziel gefahren ist
-	if((cs->getDistFromStart() >= 0) && (cs->getDistFromStart() < 2)){
-		cout << "carPassedStartFinish\n";
-		this->distFromStartValue = 0;
-		carPassedStartFinish = true;
-	}
 
-
-	// Notfallprogramm - Strecke verlassen, alle Trackwerte == -1
-	if((cs->getTrack(0) == -1) && (cs->getTrack(9) == -1) && (cs->getTrack(18) == -1)){
-		// Auto ist neben der Strecke
-		bringCarBackToRoad(cs,cc);
+	if(this->isCarStuck){
+		driveBackward(cs,cc);
 	}
-	// Notfallprogramm 2 - Auto faehrt in die Falsche Richtung
-	else if(cs->getDistFromStart() < this->distFromStartValue){
-		turnCarToRightDrivingDirection(cs,cc);
-	}
-	// KEIN_ Notfall - Auto faehrt "normal"
 	else {
+		// pruefe ob Auto eben ueber Start/Ziel gefahren ist
+		if((cs->getDistFromStart() >= 0) && (cs->getDistFromStart() < 2)){
+			cout << "carPassedStartFinish\n";
+			this->distFromStartValue = 0;
+			carPassedStartFinish = true;
+		}
 
-		// fuer den Notfall speichern ob sich das das Auto links oder rechts auf die Streckenbegrenzung zubewegt
-		this->notfallGetTrack0 = cs->getTrack(0);
-		this->notfallGetTrack18 = cs->getTrack(18);
+		// Notfallprogramm - Auto hat sich festgefahren
+		// if((cs->getDistRaced() - distRaced <= 0.1) && (cs->getSpeedX() < 1) && (this->KNearest_accel >= 0.6) && (cs->getRpm() >= 3000) && (cs->getCurLapTime() >= 3)){
+		if((cs->getDistRaced() - distRaced <= 0.1) && (cs->getSpeedX() < 1) && (this->KNearest_accel >= 0.6) && (cs->getCurLapTime() >= 3)){
+			cout << "\ncall auto hat sich festgefahren";
+			this->isCarStuck = true;
+			driveBackward(cs,cc);
+		}
 
-		/*
-		 * OLD
-		 * Nearest-Neighbour zur Berechnung des naechsten Nachbarn
-		 * calcNearestNeighbour(cs, cc);
-		 */
 
-		// K-Nearest-Neighbour zur Berechnung der naechsten Nachbarn
-		calcKNearestNeighbour(cs, cc);
-	}
+		// Notfallprogramm - Strecke verlassen, alle Trackwerte == -1
+		if((cs->getTrack(0) == -1) && (cs->getTrack(9) == -1) && (cs->getTrack(18) == -1)){
+			// Auto ist neben der Strecke
+			bringCarBackToRoad(cs,cc);
+		}
+		// Notfallprogramm 2 - Auto faehrt in die Falsche Richtung
+		else if(cs->getDistFromStart() < this->distFromStartValue){
+			turnCarToRightDrivingDirection(cs,cc);
+		}
+		// KEIN_ Notfall - Auto faehrt "normal"
+		else {
 
-	// setze Wert nur wenn er eben nicht zurueck gesetzt wurde und das Auto in die richtige Richtung faehrt
-	if((carPassedStartFinish == false) && (isCarDrivingInWrongDirection == false)){
-		this->distFromStartValue = cs->getDistFromStart();
+			// fuer den Notfall speichern ob sich das das Auto links oder rechts auf die Streckenbegrenzung zubewegt
+			this->notfallGetTrack0 = cs->getTrack(0);
+			this->notfallGetTrack18 = cs->getTrack(18);
+
+
+
+			/*
+			 * OLD
+			 * Nearest-Neighbour zur Berechnung des naechsten Nachbarn
+			 * calcNearestNeighbour(cs, cc);
+			 */
+
+			// K-Nearest-Neighbour zur Berechnung der naechsten Nachbarn
+			calcKNearestNeighbour(cs, cc);
+		}
+
+		// setze Wert nur wenn er eben nicht zurueck gesetzt wurde und das Auto in die richtige Richtung faehrt
+		if((carPassedStartFinish == false) && (isCarDrivingInWrongDirection == false)){
+			this->distFromStartValue = cs->getDistFromStart();
+		}
+
+		//
+		this->distRaced = cs->getDistRaced();
 	}
 
 	cc->setAccel(accelControl(cs, cc));
@@ -274,7 +300,32 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 	cc->setSteer(steerControl(cs, cc));
 	cc->setClutch(clutchControl(cs, cc));
 	cc->setGear(gearControl(cs, cc));
+
+
 }
+
+
+
+void Controller::driveBackward(CarState* cs, CarControl* cc){
+
+	if(this->counterTimeDriveBackward <= 0){
+		this->isCarStuck = false;
+		// setze Counter zurueck
+		this->counterTimeDriveBackward = 50;
+	}
+	else {
+		this->KNearest_accel = 0.6;
+		this->KNearest_brake = 0;
+		this->KNearest_gear = -1;
+		this->KNearest_steer = 0;
+
+		// zaehle Counter runter
+		cout << "\ncounter back: " << this->counterTimeDriveBackward;
+		this->counterTimeDriveBackward--;
+	}
+
+}
+
 
 
 void Controller::turnCarToRightDrivingDirection(CarState* cs, CarControl* cc){

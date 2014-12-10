@@ -51,6 +51,11 @@ public:
 	float distFromStartValue;
 	bool isCarDrivingInWrongDirection;
 
+	// needed for "Notfallprogramm" - Auto hat sich festgefahren
+	float distRaced;
+	int counterTimeDriveBackward;
+	bool isCarStuck;
+
 
 	// automated Control for the car
 	virtual void generateVector(CarState* cs, CarControl* cc);
@@ -89,6 +94,9 @@ private:
 
 	// Auto muss umdrehen
 	void turnCarToRightDrivingDirection(CarState* cs, CarControl* cc);
+
+	// Auto hat sich festgefahren
+	void driveBackward(CarState* cs, CarControl* cc);
 
 
 };
