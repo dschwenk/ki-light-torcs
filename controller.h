@@ -43,9 +43,14 @@ public:
 	int KNearest_gear;
 	float KNearest_sum;
 
-	// needed for "Notfallprogramm"
+	// needed for "Notfallprogramm" - BringCarBackToRoad
 	float notfallGetTrack0;
 	float notfallGetTrack18;
+
+	// needed for "Notfallprogramm" - turnCarToRightDrivingDirection
+	float distFromStartValue;
+	bool isCarDrivingInWrongDirection;
+
 
 	// automated Control for the car
 	virtual void generateVector(CarState* cs, CarControl* cc);
@@ -76,8 +81,15 @@ private:
 	// Berechnung der naechsten K Nachbarn
 	void calcKNearestNeighbour(CarState* cs, CarControl* cc);
 
+	// Auto abbremsen (bei Notfall)
+	void slowCarDown(CarState* cs, CarControl* cc);
+
 	// Bringe das Auto zurueck auf die Strecke
 	void bringCarBackToRoad(CarState* cs, CarControl* cc);
+
+	// Auto muss umdrehen
+	void turnCarToRightDrivingDirection(CarState* cs, CarControl* cc);
+
 
 };
 
