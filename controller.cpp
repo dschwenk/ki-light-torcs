@@ -103,7 +103,8 @@ Controller::Controller()
 	this->isCarDrivingInWrongDirection = false;
 	// initialisiere Notfallprogramm Auto hat sich festgefahren
 	this->isCarStuck = false;
-	this->counterTimeDriveBackward = 50;
+	this->counterTimeDriveBackward = 80;
+	this->counterTimeDriveForward = 80;
 }
 
 
@@ -239,7 +240,7 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 	bool carPassedStartFinish = false;
 
 	if(this->isCarStuck){
-		driveBackward(cs,cc);
+		decideDriveForBackward(cs,cc);
 	}
 	else {
 		// pruefe ob Auto eben ueber Start/Ziel gefahren ist
@@ -254,7 +255,7 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 		if((cs->getDistRaced() - distRaced <= 0.1) && (cs->getSpeedX() < 1) && (this->KNearest_accel >= 0.6) && (cs->getCurLapTime() >= 3)){
 			cout << "\ncall auto hat sich festgefahren";
 			this->isCarStuck = true;
-			driveBackward(cs,cc);
+			decideDriveForBackward(cs,cc);
 		}
 
 
@@ -273,8 +274,6 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 			// fuer den Notfall speichern ob sich das das Auto links oder rechts auf die Streckenbegrenzung zubewegt
 			this->notfallGetTrack0 = cs->getTrack(0);
 			this->notfallGetTrack18 = cs->getTrack(18);
-
-
 
 			/*
 			 * OLD
@@ -306,26 +305,81 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 
 
 
+void Controller::decideDriveForBackward(CarState* cs, CarControl* cc){
+	// pruefe ob Auto forwaerts oder rueckwaerts zur Strecke steht (Abstand Autospitze zur Streckenbegrenung)
+	cout << "getTrack9: " << cs->getTrack(9);
+	if(cs->getTrack(9) <= 12){
+		driveBackward(cs,cc);
+	}
+	else {
+		driveForward(cs,cc);
+	}
+}
+
+
+
 void Controller::driveBackward(CarState* cs, CarControl* cc){
 
 	if(this->counterTimeDriveBackward <= 0){
 		this->isCarStuck = false;
 		// setze Counter zurueck
-		this->counterTimeDriveBackward = 50;
+		this->counterTimeDriveBackward = 80;
 	}
 	else {
 		this->KNearest_accel = 0.6;
 		this->KNearest_brake = 0;
 		this->KNearest_gear = -1;
-		this->KNearest_steer = 0;
+		// this->KNearest_steer = 0;
+
+		// pruefe ob Auto links oder rechts von der Strecke steht
+		// Auto steht rechts neben der Strecke wenn der Streckenabstand links gross war
+		if(this->notfallGetTrack0 > this->notfallGetTrack18){
+			// lenke nach links
+			this->KNearest_steer = -0.4;
+		}
+		// Auto steht links neben der Strecke
+		else {
+			// lenke nach rechts
+			this->KNearest_steer = 0.4;
+		}
+		// TODO - ueberlege ob in die richtige richtung gelenkt wird! - genau umgekehrt wie wenn man vorwaerts faehrt?
 
 		// zaehle Counter runter
 		cout << "\ncounter back: " << this->counterTimeDriveBackward;
 		this->counterTimeDriveBackward--;
 	}
-
 }
 
+void Controller::driveForward(CarState* cs, CarControl* cc){
+
+	if(this->counterTimeDriveForward <= 0){
+		this->isCarStuck = false;
+		// setze Counter zurueck
+		this->counterTimeDriveForward = 80;
+	}
+	else {
+		this->KNearest_accel = 0.6;
+		this->KNearest_brake = 0;
+		this->KNearest_gear = 1;
+		// this->KNearest_steer = 0;
+
+		// pruefe ob Auto links oder rechts von der Strecke steht
+		// Auto steht rechts neben der Strecke wenn der Streckenabstand links gross war
+		if(this->notfallGetTrack0 > this->notfallGetTrack18){
+			// lenke nach links
+			this->KNearest_steer = 0.4;
+		}
+		// Auto steht links neben der Strecke
+		else {
+			// lenke nach rechts
+			this->KNearest_steer = -0.4;
+		}
+
+		// zaehle Counter runter
+		cout << "\ncounter forward: " << this->counterTimeDriveForward;
+		this->counterTimeDriveForward--;
+	}
+}
 
 
 void Controller::turnCarToRightDrivingDirection(CarState* cs, CarControl* cc){

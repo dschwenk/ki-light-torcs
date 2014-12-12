@@ -54,6 +54,7 @@ public:
 	// needed for "Notfallprogramm" - Auto hat sich festgefahren
 	float distRaced;
 	int counterTimeDriveBackward;
+	int counterTimeDriveForward;
 	bool isCarStuck;
 
 
@@ -97,6 +98,8 @@ private:
 
 	// Auto hat sich festgefahren
 	void driveBackward(CarState* cs, CarControl* cc);
+	void driveForward(CarState* cs, CarControl* cc);
+	void decideDriveForBackward(CarState* cs, CarControl* cc);
 
 
 };
