@@ -45,6 +45,7 @@ public:
 
 	// needed for "Notfallprogramm" - BringCarBackToRoad
 	float notfallGetTrack0;
+	float notfallGetTrack9;
 	float notfallGetTrack18;
 
 	// needed for "Notfallprogramm" - turnCarToRightDrivingDirection
@@ -56,6 +57,10 @@ public:
 	int counterTimeDriveBackward;
 	int counterTimeDriveForward;
 	bool isCarStuck;
+	int counterDriveBackward;
+	int counterDriveForward;
+	bool FlagDriveBackward;
+	bool FlagDriveForward;
 
 
 	// automated Control for the car

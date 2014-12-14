@@ -105,6 +105,10 @@ Controller::Controller()
 	this->isCarStuck = false;
 	this->counterTimeDriveBackward = 80;
 	this->counterTimeDriveForward = 80;
+	this->counterDriveBackward = 0;
+	this->counterDriveForward = 0;
+	this->FlagDriveBackward = false;
+	this->FlagDriveForward = false;
 }
 
 
@@ -234,7 +238,7 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 	// generateVector,accelcontrol,brakeControl,steerControl,clutchControl,gearControl
 
 
-	cout << "\ndist raced: " << cs->getDistRaced() << "\t| diff: " << cs->getDistRaced() - distRaced;
+	// cout << "\ndist raced: " << cs->getDistRaced() << "\t| diff: " << cs->getDistRaced() - distRaced;
 
 
 	bool carPassedStartFinish = false;
@@ -253,27 +257,33 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 		// Notfallprogramm - Auto hat sich festgefahren
 		// if((cs->getDistRaced() - distRaced <= 0.1) && (cs->getSpeedX() < 1) && (this->KNearest_accel >= 0.6) && (cs->getRpm() >= 3000) && (cs->getCurLapTime() >= 3)){
 		if((cs->getDistRaced() - distRaced <= 0.1) && (cs->getSpeedX() < 1) && (this->KNearest_accel >= 0.6) && (cs->getCurLapTime() >= 3)){
-			cout << "\ncall auto hat sich festgefahren";
+			cout << "\nAuto hat sich festgefahren";
 			this->isCarStuck = true;
 			decideDriveForBackward(cs,cc);
 		}
-
-
 		// Notfallprogramm - Strecke verlassen, alle Trackwerte == -1
-		if((cs->getTrack(0) == -1) && (cs->getTrack(9) == -1) && (cs->getTrack(18) == -1)){
+		else if((cs->getTrack(0) == -1) && (cs->getTrack(9) == -1) && (cs->getTrack(18) == -1)){
+			cout << "\nAuto hat die Strecke verlassen";
 			// Auto ist neben der Strecke
 			bringCarBackToRoad(cs,cc);
 		}
 		// Notfallprogramm 2 - Auto faehrt in die Falsche Richtung
 		else if(cs->getDistFromStart() < this->distFromStartValue){
+			cout << "\nAuto faehrt in falsche richtung";
 			turnCarToRightDrivingDirection(cs,cc);
 		}
 		// KEIN_ Notfall - Auto faehrt "normal"
 		else {
 
+			cout << "\nkein notfall";
 			// fuer den Notfall speichern ob sich das das Auto links oder rechts auf die Streckenbegrenzung zubewegt
 			this->notfallGetTrack0 = cs->getTrack(0);
+			this->notfallGetTrack9 = cs->getTrack(9);
 			this->notfallGetTrack18 = cs->getTrack(18);
+
+			// Werte Notfallprogramm zuruecksetzen
+			this->counterDriveBackward = 0;
+			this->counterDriveForward = 0;
 
 			/*
 			 * OLD
@@ -299,20 +309,59 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 	cc->setSteer(steerControl(cs, cc));
 	cc->setClutch(clutchControl(cs, cc));
 	cc->setGear(gearControl(cs, cc));
-
-
 }
 
 
 
 void Controller::decideDriveForBackward(CarState* cs, CarControl* cc){
-	// pruefe ob Auto forwaerts oder rueckwaerts zur Strecke steht (Abstand Autospitze zur Streckenbegrenung)
-	cout << "getTrack9: " << cs->getTrack(9);
-	if(cs->getTrack(9) <= 12){
+
+	if(FlagDriveForward){
+		driveForward(cs,cc);
+	}
+	else if(FlagDriveBackward){
 		driveBackward(cs,cc);
 	}
 	else {
-		driveForward(cs,cc);
+		// hat das Auto bereits 3x Mal ohne Erfolg versucht vorwaerts zu fahren
+		if(this->counterDriveForward >= 240){
+			cout << "\n##\n###\n###\n###\n###counterDriveForward ereicht.";
+			driveBackward(cs,cc);
+			this->FlagDriveBackward = true;
+			this->counterTimeDriveBackward = 80;
+			this->counterDriveForward = 0;
+		}
+		// hat das Auto bereits 3x Mal ohne Erfolg versucht rueckwaets zu fahren
+		else if(this->counterDriveBackward >= 240){
+			cout << "\n##\n###\n###\n###\n###counterDriveBackward ereicht.";
+			driveForward(cs,cc);
+			this->FlagDriveForward = true;
+			this->counterTimeDriveForward = 80;
+			this->counterDriveBackward = 0;
+		}
+		else {
+			// pruefe ob Auto forwaerts oder rueckwaerts zur Strecke steht (Abstand Autospitze zur Streckenbegrenung)
+			if(cs->getTrack(9) != -1){
+				cout << "\nkann werte auslesen";
+				cout << "\n#getTrack9: " << cs->getTrack(9);
+				if(cs->getTrack(9) <= 12){
+					driveBackward(cs,cc);
+				}
+				else {
+					driveForward(cs,cc);
+				}
+			}
+			// es koennen aktuell keine Werte ausgelesen werden
+			else {
+				cout << "\nKeine werte";
+				cout << "\n#notfallGetTrack9: " << this->notfallGetTrack9;
+				if(this->notfallGetTrack9 <= 12){
+					driveBackward(cs,cc);
+				}
+				else {
+					driveForward(cs,cc);
+				}
+			}
+		}
 	}
 }
 
@@ -320,9 +369,12 @@ void Controller::decideDriveForBackward(CarState* cs, CarControl* cc){
 
 void Controller::driveBackward(CarState* cs, CarControl* cc){
 
+	this->counterDriveBackward++;
+
 	if(this->counterTimeDriveBackward <= 0){
+		// setze Flag + Counter zurueck
 		this->isCarStuck = false;
-		// setze Counter zurueck
+		this->FlagDriveBackward = false;
 		this->counterTimeDriveBackward = 80;
 	}
 	else {
@@ -352,9 +404,12 @@ void Controller::driveBackward(CarState* cs, CarControl* cc){
 
 void Controller::driveForward(CarState* cs, CarControl* cc){
 
+	this->counterDriveForward++;
+
 	if(this->counterTimeDriveForward <= 0){
+		// setze Flag + Counter zurueck
 		this->isCarStuck = false;
-		// setze Counter zurueck
+		this->FlagDriveForward = false;
 		this->counterTimeDriveForward = 80;
 	}
 	else {
