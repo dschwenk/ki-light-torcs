@@ -92,7 +92,7 @@ Controller::Controller()
 			// Vektor ans Ende der Liste anhaengen
 			this->LogFileLineVektorList.push_back(TmpLineVector);
 		}
-		cout << "\nTrainingsdaten importiert\n\n";
+		cout << "\nTrainingsdaten importiert - " << this->LogFileLineVektorList.size() << " Vektoren\n\n";
 	}
 	else {
 		cout << "\nKonnte Traininsdaten-Datein nicht oeffnen!\n\n";
@@ -109,6 +109,9 @@ Controller::Controller()
 	this->counterDriveForward = 0;
 	this->FlagDriveBackward = false;
 	this->FlagDriveForward = false;
+	// initialisiere Notfallprogramm Auto steht still
+	this->isCarStandingStill = false;
+	this->counterTimeCarStandingStill = 50;
 }
 
 
@@ -246,6 +249,9 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 	if(this->isCarStuck){
 		decideDriveForBackward(cs,cc);
 	}
+	else if(this->isCarStandingStill){
+		speedCarUp(cs,cc);
+	}
 	else {
 		// pruefe ob Auto eben ueber Start/Ziel gefahren ist
 		if((cs->getDistFromStart() >= 0) && (cs->getDistFromStart() < 2)){
@@ -271,6 +277,11 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 		else if(cs->getDistFromStart() < this->distFromStartValue){
 			cout << "\nAuto faehrt in falsche richtung";
 			turnCarToRightDrivingDirection(cs,cc);
+		}
+		// Auto steht auf der Strecke und faehrt nicht mehr
+		else if((cs->getTrack(0) != -1) && (cs->getTrack(9) != -1) && (cs->getTrack(18) != -1) && (cs->getSpeedX() <= 1) && (this->KNearest_accel == 0) && (this->KNearest_brake == 0) && (cs->getCurLapTime() >= 3)){
+			this->isCarStandingStill = true;
+			speedCarUp(cs,cc);
 		}
 		// KEIN_ Notfall - Auto faehrt "normal"
 		else {
@@ -525,6 +536,32 @@ void Controller::slowCarDown(CarState* cs, CarControl* cc){
 	}
 	else {
 		this->KNearest_gear = 1;
+	}
+}
+
+
+void Controller::speedCarUp(CarState* cs, CarControl* cc){
+
+	if(this->counterTimeCarStandingStill <= 0){
+		// setze Flag + Counter zurueck
+		this->isCarStandingStill = false;
+		this->counterTimeCarStandingStill = 50;
+	}
+	else {
+		this->KNearest_accel = 0.6;
+		this->KNearest_brake = 0;
+		this->KNearest_steer = 0;
+		float speedX = cs->getSpeedX();
+		if(speedX > 70){
+			this->KNearest_gear = 3;
+		}
+		else if(speedX > 30){
+			this->KNearest_gear = 2;
+		}
+		else {
+			this->KNearest_gear = 1;
+		}
+		this->counterTimeCarStandingStill--;
 	}
 }
 

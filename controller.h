@@ -62,6 +62,9 @@ public:
 	bool FlagDriveBackward;
 	bool FlagDriveForward;
 
+	// needed for "Notfallprogramm" - Auto steht still
+	bool isCarStandingStill;
+	int counterTimeCarStandingStill;
 
 	// automated Control for the car
 	virtual void generateVector(CarState* cs, CarControl* cc);
@@ -85,28 +88,26 @@ private:
 	// subfunction for the automated control
 	int gearControl(CarState* cs, CarControl* cc);
 
-
 	// Berechnung des naechsten Nachbarn
 	void calcNearestNeighbour(CarState* cs, CarControl* cc);
 
 	// Berechnung der naechsten K Nachbarn
 	void calcKNearestNeighbour(CarState* cs, CarControl* cc);
 
-	// Auto abbremsen (bei Notfall)
+	// Auto abbremsen / beschleunigen (
 	void slowCarDown(CarState* cs, CarControl* cc);
+	void speedCarUp(CarState* cs, CarControl* cc);
 
 	// Bringe das Auto zurueck auf die Strecke
 	void bringCarBackToRoad(CarState* cs, CarControl* cc);
 
-	// Auto muss umdrehen
+	// Auto faehrt in falsche Richtung
 	void turnCarToRightDrivingDirection(CarState* cs, CarControl* cc);
 
 	// Auto hat sich festgefahren
 	void driveBackward(CarState* cs, CarControl* cc);
 	void driveForward(CarState* cs, CarControl* cc);
 	void decideDriveForBackward(CarState* cs, CarControl* cc);
-
-
 };
 
 #endif
