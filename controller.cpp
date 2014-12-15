@@ -2,17 +2,15 @@
 	author: Stefan Moebius
 	date: 11.04.2012
 */
-#include "controller.h"
 
+#include "controller.h"
 
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <string>
 
-
 using namespace std;
-
 
 
 Controller::Controller()
@@ -118,38 +116,6 @@ Controller::Controller()
 Controller::~Controller()
 {
 	//TODO: Trainingsdaten in Datei abspeichern
-
-	/*
-	// Sensorwerte + Fahrzeugaktion in Datei speichern
-	// Winkel, Gang, Drehzahl, Tracksensoren (je 3 Werte zu einem Wert zusammengefasst), Gas, Bremse, Gang, Lenkung
-	*/
-
-	/*
-	cout << "\Schreibe Trainingsdaten\n";
-	for(int i=0;i<this->LogFileLineVektorList.size();i++){
-		for(int j=0;j<ElementeJeVektor;j++){
-			this->SensorDataStream << this->LogFileLineVektorList[i]->lv[j] << ",";
-		}
-		this->SensorDataStream << "\n";
-	}
-
-	this->SensorDataString = this->SensorDataStream.str();
-
-	ofstream trainingDataLog("trainingDataDestOut.log", ios::out | ios::app);
-	trainingDataLog << this->SensorDataString;
-	trainingDataLog.close();
-
-	*/
-
-	
-	// Logging
-	//
-	// convert stream to string, open stream to log, write data
-	this->SensorDataString = this->SensorDataStream.str();
-
-	ofstream trainingDataLog("myLog.log", ios::out | ios::app);
-	trainingDataLog << this->SensorDataString;
-	trainingDataLog.close();
 	
 }
 
@@ -157,16 +123,10 @@ float Controller::accelControl(CarState* cs, CarControl* cc)
 {
 	//TODO: hier code einfügen, der die Beschleunigung des Autos regelt
 	//float accel = 1.0f; //Für einen ersten test hier einfach auf "Vollgas" gesetzt...
-	//return accel;
 
-
+	// Wert wurde von calcKNearestNeighbour berechnet/zurueckgegeben und in XY gespeichert
 	float accel = this->KNearest_accel;
 
-	// Logging
-	this->SensorDataStream << accel;
-	cout << "\naccel: " << accel;
-
-	// Gas geben
 	return accel;
 
 }
@@ -179,11 +139,6 @@ float Controller::brakeControl(CarState* cs, CarControl* cc)
 	// Wert wurde von calcKNearestNeighbour berechnet/zurueckgegeben und in XY gespeichert
 	float brake = this->KNearest_brake;
 
-	// Logging
-	this->SensorDataStream << "," << brake;
-	cout << "  brake: " << brake;
-
-	// bremsen
 	return brake;
 }
 
@@ -199,11 +154,6 @@ float Controller::steerControl(CarState* cs, CarControl* cc)
 	// Wert wurde von calcKNearestNeighbour berechnet/zurueckgegeben und in XY gespeichert
 	float steer = this->KNearest_steer;
 
-	// Logging
-	this->SensorDataStream << "," << steer;
-	cout << "  steer: " << steer;
-
-	// lenken
 	return steer;
 }
 
@@ -224,11 +174,6 @@ int Controller::gearControl(CarState* cs, CarControl* cc)
 	// Wert wurde von calcKNearestNeighbour berechnet/zurueckgegeben und in XY gespeichert
 	int gear = this->KNearest_gear;
 
-	// Logging
-	this->SensorDataStream << "," << gear << "\n";
-	cout << "  gear: " << gear << "\n" ;
-
-	// schalten
 	return gear;
 }
 
@@ -239,9 +184,6 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 
 	// Aufruf der Funktionen in der Reihenfolge
 	// generateVector,accelcontrol,brakeControl,steerControl,clutchControl,gearControl
-
-
-	// cout << "\ndist raced: " << cs->getDistRaced() << "\t| diff: " << cs->getDistRaced() - distRaced;
 
 
 	bool carPassedStartFinish = false;
@@ -261,7 +203,6 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 		}
 
 		// Notfallprogramm - Auto hat sich festgefahren
-		// if((cs->getDistRaced() - distRaced <= 0.1) && (cs->getSpeedX() < 1) && (this->KNearest_accel >= 0.6) && (cs->getRpm() >= 3000) && (cs->getCurLapTime() >= 3)){
 		if((cs->getDistRaced() - distRaced <= 0.1) && (cs->getSpeedX() < 1) && (this->KNearest_accel >= 0.6) && (cs->getCurLapTime() >= 3)){
 			cout << "\nAuto hat sich festgefahren";
 			this->isCarStuck = true;
@@ -280,6 +221,7 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 		}
 		// Auto steht auf der Strecke und faehrt nicht mehr
 		else if((cs->getTrack(0) != -1) && (cs->getTrack(9) != -1) && (cs->getTrack(18) != -1) && (cs->getSpeedX() <= 1) && (this->KNearest_accel == 0) && (this->KNearest_brake == 0) && (cs->getCurLapTime() >= 3)){
+			cout << "\nAuto steht still";
 			this->isCarStandingStill = true;
 			speedCarUp(cs,cc);
 		}
@@ -311,7 +253,6 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 			this->distFromStartValue = cs->getDistFromStart();
 		}
 
-		//
 		this->distRaced = cs->getDistRaced();
 	}
 
@@ -326,16 +267,15 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 
 void Controller::decideDriveForBackward(CarState* cs, CarControl* cc){
 
-	if(FlagDriveForward){
+	if(this->FlagDriveForward){
 		driveForward(cs,cc);
 	}
-	else if(FlagDriveBackward){
+	else if(this->FlagDriveBackward){
 		driveBackward(cs,cc);
 	}
 	else {
 		// hat das Auto bereits 3x Mal ohne Erfolg versucht vorwaerts zu fahren
 		if(this->counterDriveForward >= 240){
-			cout << "\n##\n###\n###\n###\n###counterDriveForward ereicht.";
 			driveBackward(cs,cc);
 			this->FlagDriveBackward = true;
 			this->counterTimeDriveBackward = 80;
@@ -343,7 +283,6 @@ void Controller::decideDriveForBackward(CarState* cs, CarControl* cc){
 		}
 		// hat das Auto bereits 3x Mal ohne Erfolg versucht rueckwaets zu fahren
 		else if(this->counterDriveBackward >= 240){
-			cout << "\n##\n###\n###\n###\n###counterDriveBackward ereicht.";
 			driveForward(cs,cc);
 			this->FlagDriveForward = true;
 			this->counterTimeDriveForward = 80;
@@ -352,23 +291,23 @@ void Controller::decideDriveForBackward(CarState* cs, CarControl* cc){
 		else {
 			// pruefe ob Auto forwaerts oder rueckwaerts zur Strecke steht (Abstand Autospitze zur Streckenbegrenung)
 			if(cs->getTrack(9) != -1){
-				cout << "\nkann werte auslesen";
-				cout << "\n#getTrack9: " << cs->getTrack(9);
 				if(cs->getTrack(9) <= 12){
+					this->FlagDriveBackward = true;
 					driveBackward(cs,cc);
 				}
 				else {
+					this->FlagDriveForward = true;
 					driveForward(cs,cc);
 				}
 			}
 			// es koennen aktuell keine Werte ausgelesen werden
 			else {
-				cout << "\nKeine werte";
-				cout << "\n#notfallGetTrack9: " << this->notfallGetTrack9;
 				if(this->notfallGetTrack9 <= 12){
+					this->FlagDriveBackward = true;
 					driveBackward(cs,cc);
 				}
 				else {
+					this->FlagDriveForward = true;
 					driveForward(cs,cc);
 				}
 			}
@@ -392,7 +331,6 @@ void Controller::driveBackward(CarState* cs, CarControl* cc){
 		this->KNearest_accel = 0.6;
 		this->KNearest_brake = 0;
 		this->KNearest_gear = -1;
-		// this->KNearest_steer = 0;
 
 		// pruefe ob Auto links oder rechts von der Strecke steht
 		// Auto steht rechts neben der Strecke wenn der Streckenabstand links gross war
@@ -427,7 +365,6 @@ void Controller::driveForward(CarState* cs, CarControl* cc){
 		this->KNearest_accel = 0.6;
 		this->KNearest_brake = 0;
 		this->KNearest_gear = 1;
-		// this->KNearest_steer = 0;
 
 		// pruefe ob Auto links oder rechts von der Strecke steht
 		// Auto steht rechts neben der Strecke wenn der Streckenabstand links gross war
@@ -451,8 +388,6 @@ void Controller::driveForward(CarState* cs, CarControl* cc){
 void Controller::turnCarToRightDrivingDirection(CarState* cs, CarControl* cc){
 	// Kontrollausgabe der aktuellen Trackwerte + Geschwindigkeit
 	cout << "\turnCarToRightDrivingDirection\n";
-	// cout << cs->getTrack(0) << "\t" << cs->getTrack(9) << "\t" << cs->getTrack(18) << "\n";
-	// cout << cs->getSpeedX() << "\t" << cs->getSpeedY() << "\n";
 
 	isCarDrivingInWrongDirection = true;
 
@@ -487,8 +422,6 @@ void Controller::bringCarBackToRoad(CarState* cs, CarControl* cc){
 
 	// Kontrollausgabe der aktuellen Trackwerte + Geschwindigkeit
 	cout << "\nbringCarBackToRoad\n";
-	// cout << cs->getTrack(0) << "\t" << cs->getTrack(9) << "\t" << cs->getTrack(18) << "\n";
-	// cout << cs->getSpeedX() << "\t" << cs->getSpeedY() << "\n";
 
 	// das Auto ist langsam bzw. steht neben der Strecke
 	if(cs->getSpeedX() <= 20){

@@ -21,11 +21,6 @@ public:
 	Controller();
 	~Controller();
 
-
-	// Logginzwecke	
-	ostringstream SensorDataStream;
-	string SensorDataString;
-
 	// Vektor, der alle Objekte (Zeilen/Vektoren) der Trainingsdatei beinhaltet
 	vector<LineVector*> LogFileLineVektorList;
 
