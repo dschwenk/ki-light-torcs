@@ -237,6 +237,7 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 			// Werte Notfallprogramm zuruecksetzen
 			this->counterDriveBackward = 0;
 			this->counterDriveForward = 0;
+			this->isCarDrivingInWrongDirection = false;
 
 			/*
 			 * OLD
@@ -249,7 +250,7 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 		}
 
 		// setze Wert nur wenn er eben nicht zurueck gesetzt wurde und das Auto in die richtige Richtung faehrt
-		if((carPassedStartFinish == false) && (isCarDrivingInWrongDirection == false)){
+		if((carPassedStartFinish == false) && (this->isCarDrivingInWrongDirection == false)){
 			this->distFromStartValue = cs->getDistFromStart();
 		}
 
@@ -386,10 +387,11 @@ void Controller::driveForward(CarState* cs, CarControl* cc){
 
 
 void Controller::turnCarToRightDrivingDirection(CarState* cs, CarControl* cc){
+
 	// Kontrollausgabe der aktuellen Trackwerte + Geschwindigkeit
 	cout << "\turnCarToRightDrivingDirection\n";
 
-	isCarDrivingInWrongDirection = true;
+	this->isCarDrivingInWrongDirection = true;
 
 	// das Auto ist langsam
 	if(cs->getSpeedX() <= 20){
