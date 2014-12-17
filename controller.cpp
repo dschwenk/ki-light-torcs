@@ -42,14 +42,17 @@ Controller::Controller()
 			case 1:
 				trainingDataFile = "AkkarampalleData.log";
 				inputTrainingFileValid = true;
+				track = 1;
 				break;
 			case 2:
 				trainingDataFile = "LimalongesData.log";
 				inputTrainingFileValid = true;
+				track = 2;
 				break;
 			case 3:
 				trainingDataFile = "UshiteData.log";
 				inputTrainingFileValid = true;
+				track = 3;
 				break;
 			case 9:
 				// TODO keine Eingabe moeglich?
@@ -220,7 +223,7 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 			turnCarToRightDrivingDirection(cs,cc);
 		}
 		// Auto steht auf der Strecke und faehrt nicht mehr
-		else if((cs->getTrack(0) != -1) && (cs->getTrack(9) != -1) && (cs->getTrack(18) != -1) && (cs->getSpeedX() <= 1) && (this->KNearest_accel == 0) && (this->KNearest_brake == 0) && (cs->getCurLapTime() >= 3)){
+		else if((cs->getTrack(0) != -1) && (cs->getTrack(9) != -1) && (cs->getTrack(18) != -1) && (cs->getSpeedX() <= 10) && (cs->getCurLapTime() >= 3)){
 			cout << "\nAuto steht still";
 			this->isCarStandingStill = true;
 			speedCarUp(cs,cc);
@@ -572,7 +575,7 @@ void Controller::calcKNearestNeighbour(CarState* cs, CarControl* cc){
 
 
 		// Angle / Winkel zur Streck
-		NearestNeighbourDistanceSum += ((this->LogFileLineVektorList[i]->lv[0] - cs->getAngle()) * (this->LogFileLineVektorList[i]->lv[0] - cs->getAngle()));
+		NearestNeighbourDistanceSum += 10*((this->LogFileLineVektorList[i]->lv[0] - cs->getAngle()) * (this->LogFileLineVektorList[i]->lv[0] - cs->getAngle()));
 
 		// Gang - normiert
 		normedGear = this->LogFileLineVektorList[i]->lv[2];
@@ -589,13 +592,13 @@ void Controller::calcKNearestNeighbour(CarState* cs, CarControl* cc){
 		// SppedX - normiert
 		normedSpeedX = this->LogFileLineVektorList[i]->lv[41] / 35;
 		normedGetSpeedX = cs->getSpeedX() / 35;
-		NearestNeighbourDistanceSum += ((normedSpeedX - normedGetSpeedX) * (normedSpeedX - normedGetSpeedX));
+		NearestNeighbourDistanceSum += 5*((normedSpeedX - normedGetSpeedX) * (normedSpeedX - normedGetSpeedX));
 
 
 		// SppedY - normiert
 		normedSpeedY = this->LogFileLineVektorList[i]->lv[42] / 28;
 		normedGetSpeedY = cs->getSpeedY() / 28;
-		NearestNeighbourDistanceSum += ((normedSpeedY - normedGetSpeedY) * (normedSpeedY - normedGetSpeedY));
+		NearestNeighbourDistanceSum += 5*((normedSpeedY - normedGetSpeedY) * (normedSpeedY - normedGetSpeedY)); 
 
 		// TrackSensorDaten
 		// j+=2 -> "nur" 10 anstatt 19 werte beruecksichtigt
@@ -659,6 +662,8 @@ void Controller::calcKNearestNeighbour(CarState* cs, CarControl* cc){
 		cout << "\nNV: sum" << (*it)->nv[0] << "\taccel" << (*it)->nv[1] << "\tbrake" << (*it)->nv[2] << "\tsteer" << (*it)->nv[3] << "\tgear" << (*it)->nv[4];
 	}
 
+	cout << "Distanz: " << cs->getDistFromStart();
+
 	float accel = accelsum / K;
 	float brake = brakesum / K;
 	float steer = steersum / K;
@@ -667,28 +672,54 @@ void Controller::calcKNearestNeighbour(CarState* cs, CarControl* cc){
 
 	// setting gear "manuel" is accurater than calculating / prevents gear from heavy overfitting
 	float speedX = cs->getSpeedX();
-	if(speedX > 240){
-		this->KNearest_gear = 6;
+	switch (track) {
+		case 1: 
+			printf("gear track 1");
+			if(speedX > 240){
+				this->KNearest_gear = 6;
+			}
+			else if(speedX > 200 && speedX < 230){
+				this->KNearest_gear = 5;
+			}
+			else if (speedX > 120 && speedX < 180){
+				this->KNearest_gear = 4;
+			}
+			else if (speedX > 70 && speedX < 110){
+				this->KNearest_gear = 3;
+			}
+			else if (speedX > 35 && speedX < 60){
+				this->KNearest_gear = 2;
+			}
+			else if (speedX < 20){
+				this->KNearest_gear = 1;
+			}
+			else {
+				// do nothing, keep current gear
+			}
+		break;
+		default:
+			if(speedX > 240){
+				this->KNearest_gear = 6;
+			}
+			else if(speedX > 200 && speedX < 230){
+				this->KNearest_gear = 5;
+			}
+			else if (speedX > 140 && speedX < 190){
+				this->KNearest_gear = 4;
+			}
+			else if (speedX > 90 && speedX < 130){
+				this->KNearest_gear = 3;
+			}
+			else if (speedX > 40 && speedX < 80){
+				this->KNearest_gear = 2;
+			}
+			else if (speedX < 35){
+				this->KNearest_gear = 1;
+			}
+			else {
+				// do nothing, keep current gear
+			}
 	}
-	else if(speedX > 200 && speedX < 230){
-		this->KNearest_gear = 5;
-	}
-	else if (speedX > 140 && speedX < 190){
-		this->KNearest_gear = 4;
-	}
-	else if (speedX > 90 && speedX < 130){
-		this->KNearest_gear = 3;
-	}
-	else if (speedX > 40 && speedX < 80){
-		this->KNearest_gear = 2;
-	}
-	else if (speedX < 35){
-		this->KNearest_gear = 1;
-	}
-	else {
-		// do nothing, keep current gear
-	}
-
 
 	this->KNearest_accel = accel;
 	this->KNearest_brake = brake;

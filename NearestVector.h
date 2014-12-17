@@ -6,7 +6,7 @@ using namespace std;
 
 
 // Nearest Neighbour Count
-#define K 5
+#define K 6
 
 
 // Anzahl an Elementen je Vektor

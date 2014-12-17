@@ -61,6 +61,12 @@ public:
 	bool isCarStandingStill;
 	int counterTimeCarStandingStill;
 
+	// number for track
+	/* 1 = Akkarampalle-mountain *
+	   2 = Limalonges-desert *
+	   3 = Ushite-mountain-snow */
+	int track;
+
 	// automated Control for the car
 	virtual void generateVector(CarState* cs, CarControl* cc);
 
