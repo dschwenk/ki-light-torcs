@@ -228,6 +228,10 @@ void Controller::generateVector(CarState* cs, CarControl* cc)
 			this->isCarStandingStill = true;
 			speedCarUp(cs,cc);
 		}
+		// TODO remove
+		else if (track == 1 && cs->getDistFromStart() <= 200) {
+			speedCarUp(cs,cc);
+		}
 		// KEIN_ Notfall - Auto faehrt "normal"
 		else {
 
@@ -672,10 +676,9 @@ void Controller::calcKNearestNeighbour(CarState* cs, CarControl* cc){
 
 	// setting gear "manuel" is accurater than calculating / prevents gear from heavy overfitting
 	float speedX = cs->getSpeedX();
-	switch (track) {
-		case 1: 
-			printf("gear track 1");
-			if(speedX > 240){
+
+	if (track == 1 || track == 2) {
+		if(speedX > 240){
 				this->KNearest_gear = 6;
 			}
 			else if(speedX > 200 && speedX < 230){
@@ -696,9 +699,8 @@ void Controller::calcKNearestNeighbour(CarState* cs, CarControl* cc){
 			else {
 				// do nothing, keep current gear
 			}
-		break;
-		default:
-			if(speedX > 240){
+	} else {
+		if(speedX > 240){
 				this->KNearest_gear = 6;
 			}
 			else if(speedX > 200 && speedX < 230){
